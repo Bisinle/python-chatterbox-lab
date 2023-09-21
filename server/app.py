@@ -1,7 +1,7 @@
 from flask import Flask, request, make_response, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
-from sqlalchemy import desc
+from sqlalchemy import desc,asc
 
 
 from models import db, Message
@@ -20,18 +20,12 @@ db.init_app(app)
 def messages():
     '''eturns an array of all messages as JSON, ordered by created_at 
         in ascending order.'''
-    messages = Message.query.order_by(desc(Message.created_at))
+    messages = Message.query.order_by(asc(Message.created_at))
 
     if request.method == 'GET':
         messages_list=[]
         for message in messages:
-            message_dict={
-                'id':message.id,
-                'username':message.username,
-                'body':message.body,
-                'created_at':message.created_at,
-                'updated_at':message.updated_at,
-            }
+            message_dict=message.to_dict()
             messages_list.append(message_dict)
 
         response = make_response(jsonify(messages_list),200)
@@ -69,8 +63,9 @@ def messages_by_id(id):
 
 
     if request.method == 'PATCH':
-        for attr in request.form:
-         setattr(message, attr, request.form.get(attr))
+        data = request.get_json()
+        for attr in data:
+         setattr(message, attr, data.get(attr))
         db.session.add(message)
         db.session.commit()
 
